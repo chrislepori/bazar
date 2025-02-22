@@ -1,49 +1,52 @@
 package com.proyectofinal.bazar.service;
 
+import com.proyectofinal.bazar.dto.ClienteDTO;
 import com.proyectofinal.bazar.model.Cliente;
-import com.proyectofinal.bazar.repository.IClienteRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.proyectofinal.bazar.repository.ClienteRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@AllArgsConstructor
 @Service
-public class ClienteService implements IClienteService {
-    @Autowired
-    private IClienteRepository clienteRepo;
+public class ClienteService {
 
-    @Override
+    private final ClienteRepository clienteRepo;
+
+
     public List<Cliente> getClientes() {
         return clienteRepo.findAll();
     }
 
-    @Override
-    public void createCliente(Cliente cliente) {
-        clienteRepo.save(cliente);
 
-    }
-
-    @Override
-    public Cliente findCliente(Long idCliente) {
-        return clienteRepo.findById(idCliente).orElse(null);
-    }
-
-    @Override
-    public void deleteCliente(Long idCliente) {
-        clienteRepo.deleteById(idCliente);
-
-    }
-
-    @Override
-    public void editCliente(Long idClienteOriginal, Long idCliente, String nombre, String apellido, String dni) {
-        Cliente cli = this.findCliente(idClienteOriginal);
-        if (cli != null) {
-            cli.setIdCliente(idCliente);
-            cli.setNombre(nombre);
-            cli.setApellido(apellido);
-            cli.setDni(dni);
-            this.createCliente(cli);
+    public Cliente createCliente(ClienteDTO clienteDTO) {
+        if (clienteRepo.findByDni(clienteDTO.getDni()).isPresent()) {
+            throw new IllegalArgumentException("Ya existe un cliente con ese DNI.");
         }
+        Cliente cliente = new Cliente();
+        cliente.setDni(clienteDTO.getDni());
+        cliente.setNombre(clienteDTO.getNombre());
+        cliente.setApellido(clienteDTO.getApellido());
+        cliente.setDomicilio(clienteDTO.getDomicilio());
+
+        return clienteRepo.save(cliente);
+    }
+
+
+    public Cliente findCliente(String dni) {
+        return clienteRepo.findByDni(dni)
+                .orElseThrow(()-> new IllegalArgumentException("No se encontro el cliente"));
+    }
+
+
+    public void deleteCliente(String dni) {
+        Cliente cliente = clienteRepo.findByDni(dni)
+                .orElseThrow(()-> new IllegalArgumentException("No se encontro el cliente"));
+        clienteRepo.delete(cliente);
 
     }
+
+
+
 }

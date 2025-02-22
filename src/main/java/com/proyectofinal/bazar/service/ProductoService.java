@@ -1,57 +1,57 @@
 package com.proyectofinal.bazar.service;
 
+import com.proyectofinal.bazar.dto.ProductoDTO;
 import com.proyectofinal.bazar.model.Producto;
-import com.proyectofinal.bazar.repository.IProductoRepository;
+import com.proyectofinal.bazar.repository.ProductoRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
-public class ProductoService implements IProductoService {
-    @Autowired
-    private IProductoRepository productoRepo;
+@AllArgsConstructor
+public class ProductoService {
 
-    @Override
+    private final ProductoRepository productoRepo;
+
+
     public List<Producto> getProductos() {
         return productoRepo.findAll();
     }
 
-    @Override
-    public void createProducto(Producto producto) {
-        productoRepo.save(producto);
 
+    public Producto createProducto(ProductoDTO productoDTO) {
+        if (productoRepo.existsByNombre(productoDTO.getNombre())) {
+            throw new IllegalArgumentException("El producto ya existe");
+        }
 
+        Producto nuevoProducto = new Producto();
+        nuevoProducto.setNombre(productoDTO.getNombre());
+        nuevoProducto.setCosto(productoDTO.getPrecio());
+        nuevoProducto.setCantidadDisponible(productoDTO.getCantidadDisponible());
+        nuevoProducto.setMarca(productoDTO.getMarca());
+
+        return productoRepo.save(nuevoProducto);
     }
 
-    @Override
-    public Producto findProducto(Long codigoProducto) {
-        return productoRepo.findById(codigoProducto).orElse(null);
+    public Producto findProducto(Long id) {
+        return productoRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado"));
     }
 
-    @Override
-    public void deleteProducto(Long codigoProducto) {
-        productoRepo.deleteById(codigoProducto);
 
-    }
-
-    @Override
-    public void editProducto(Long codigoProductoOriginal, Long codigoProducto, String nombre, String marca, double costo, double cantidadDisponible) {
-        Producto producto = this.findProducto(codigoProductoOriginal);
-        if (producto != null) {
-            producto.setCodigoProducto(codigoProducto);
-            producto.setNombre(nombre);
-            producto.setMarca(marca);
-            producto.setCosto(costo);
-            producto.setCantidadDisponible(cantidadDisponible);
-            this.createProducto(producto);
+    public void deleteProducto(Long id) {
+        Producto producto = findProducto(id);
+        if(producto != null){
+            productoRepo.delete(producto);
         }
 
     }
 
-    @Override
-    public List<Producto> cantidadProductosMenoresCinco() {
-        return productoRepo.findByCantidadDisponibleLessThanEqual(5);
+    public List<Producto> productosConBajoStock() {
+        return productoRepo.findByCantidadDisponibleLessThanEqual(1000);
     }
 
 

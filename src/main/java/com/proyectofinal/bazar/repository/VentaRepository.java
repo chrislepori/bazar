@@ -6,8 +6,11 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface IVentaRepository extends JpaRepository<Venta, Long> {
-     List<Venta> findByFechaVenta(LocalDate fecha);
+public interface VentaRepository extends JpaRepository<Venta, Long> {
+
+     Optional<List<Venta>> findByFechaVenta(LocalDate fecha);
+
 }

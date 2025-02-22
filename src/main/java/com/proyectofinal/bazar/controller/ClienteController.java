@@ -1,46 +1,75 @@
 package com.proyectofinal.bazar.controller;
 
+import com.proyectofinal.bazar.dto.ClienteDTO;
+import com.proyectofinal.bazar.dto.ClienteResponseDTO;
 import com.proyectofinal.bazar.model.Cliente;
-import com.proyectofinal.bazar.service.IClienteService;
+import com.proyectofinal.bazar.service.ClienteService;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @RestController
+@RequestMapping("/clientes")
+@AllArgsConstructor
 public class ClienteController {
-    @Autowired
-    private IClienteService clienteServ;
 
-    @GetMapping("/clientes/get")
-    public List<Cliente> getClientes() {
-        return clienteServ.getClientes();
-    }
+    private final ClienteService clienteService;
 
-    @PostMapping("cliente/create")
-    public void createCliente(@RequestBody Cliente cli) {
-        clienteServ.createCliente(cli);
+    @PostMapping
+    public ResponseEntity<ClienteResponseDTO> crearCliente(@RequestBody ClienteDTO clienteDTO) {
+        Cliente cliente = clienteService.createCliente(clienteDTO);
+        ClienteResponseDTO clienteResponseDTO = new ClienteResponseDTO(cliente.getNombre(), cliente.getApellido(), cliente.getDni(), cliente.getDomicilio());
+        return ResponseEntity.status(HttpStatus.CREATED).body(clienteResponseDTO);
 
     }
 
-    @GetMapping("cliente/find/{idCliente}")
-    public Cliente findCliente(@PathVariable Long idCliente) {
-        return clienteServ.findCliente(idCliente);
+    @DeleteMapping("/{dni}")
+    public ResponseEntity<Void> eliminarCliente(@PathVariable String dni){
+        clienteService.deleteCliente(dni);
+        return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("cliente/delete/{idCliente}")
-    public void deleteCliente(@PathVariable Long idCliente) {
-        clienteServ.deleteCliente(idCliente);
+    @GetMapping("/{dni}")
+    public ResponseEntity<ClienteResponseDTO> encontrarCliente(@PathVariable String dni){
+        Cliente cliente = clienteService.findCliente(dni);
+        ClienteResponseDTO clienteResponseDTO = new ClienteResponseDTO(cliente.getNombre(), cliente.getApellido(), cliente.getDni(), cliente.getDomicilio());
+        return ResponseEntity.ok(clienteResponseDTO);
+
+
     }
 
-    @PutMapping("/cliente/edit/{idClienteOriginal}")
-    public void editCliente(@PathVariable Long idClienteOriginal,
-                            @RequestParam(required = false) Long idCliente,
-                            @RequestParam(required = false) String nombre,
-                            @RequestParam(required = false) String apellido,
-                            @RequestParam(required = false) String dni) {
-        clienteServ.editCliente(idClienteOriginal, idCliente, nombre, apellido, dni);
+    @GetMapping("/traer-clientes")
+    public ResponseEntity<List<ClienteResponseDTO>> mostrarClientes(){
+        List<Cliente> clientes = clienteService.getClientes();
+        List<ClienteResponseDTO> clientesResponseDTOs = new ArrayList<>();
+        for(Cliente cliente: clientes){
+            ClienteResponseDTO clienteResponseDTO = new ClienteResponseDTO(cliente.getNombre(), cliente.getApellido(), cliente.getDni(), cliente.getDomicilio());
+            clientesResponseDTOs.add(clienteResponseDTO);
+        }
+        return clientes.isEmpty()
+                ? ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList())
+                : ResponseEntity.ok(clientesResponseDTOs);
+
     }
+
+
+
+
+
+
+
+
+
 
 
 }
+
+
+
+

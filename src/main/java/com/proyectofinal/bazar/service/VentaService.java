@@ -1,97 +1,154 @@
 package com.proyectofinal.bazar.service;
 
 import com.proyectofinal.bazar.dto.ProductoVentaDTO;
+import com.proyectofinal.bazar.dto.VentaDTO;
 import com.proyectofinal.bazar.model.Cliente;
 import com.proyectofinal.bazar.model.Producto;
 import com.proyectofinal.bazar.model.Venta;
-import com.proyectofinal.bazar.repository.IProductoRepository;
-import com.proyectofinal.bazar.repository.IVentaRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.proyectofinal.bazar.repository.ClienteRepository;
+import com.proyectofinal.bazar.repository.ProductoRepository;
+import com.proyectofinal.bazar.repository.VentaRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 @Service
-public class VentaService implements IVentaService {
-    @Autowired
-    private IVentaRepository ventaRepo;
-    @Autowired
-    private IProductoRepository productoRepo;
+@AllArgsConstructor
+public class VentaService {
+
+    private final VentaRepository ventaRepo;
+    private final ProductoRepository productoRepo;
+    private final ClienteRepository clienteRepo;
+
+    private boolean noHayProductos(VentaDTO ventaDTO) {
+        return ventaDTO.getProductosIds() == null || ventaDTO.getProductosIds().isEmpty();
+    }
+
+    private List<Producto> obtenerProductosValidos(VentaDTO ventaDTO) {
+        List<Producto> productos = new ArrayList<>();
+        for (Long id : ventaDTO.getProductosIds()) {
+            Producto producto = productoRepo.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado con ID: " + id));
+
+            if (!producto.tieneStock()) {
+                throw new IllegalArgumentException("El producto " + producto.getNombre() + " no tiene stock suficiente.");
+            }
+
+            productos.add(producto);
+        }
+        return productos;
+    }
+
+    private Cliente validarCliente(VentaDTO ventaDTO) {
+        Cliente cliente = null;
+        if (ventaDTO.getClienteId() != null) {
+            cliente = clienteRepo.findById(ventaDTO.getClienteId())
+                    .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado."));
+        }
+        return cliente;
+    }
+
+    private Venta getVenta(List<Producto> productos, Cliente cliente) {
+        Venta nuevaVenta = new Venta();
+        nuevaVenta.setFechaVenta(LocalDate.now()); // Fecha actual
+        nuevaVenta.setProductos(productos);
+        nuevaVenta.setCliente(cliente);
+        nuevaVenta.obtenerMonto();
+        return nuevaVenta;
+    }
+
+    private void descontarProductos(List<Producto> productos) {
+        for (Producto p : productos) {
+            p.descontarCantidad();
+        }
+        productoRepo.saveAll(productos);
+    }
 
 
-    @Override
+    public Venta createVenta(VentaDTO ventaDTO) {
+        // Validar que haya productos en la venta
+        if (noHayProductos(ventaDTO)) {
+            throw new IllegalArgumentException("La venta debe tener al menos un producto.");
+        }
+
+        // Buscar los productos en la BD y validar stock
+        List<Producto> productos = obtenerProductosValidos(ventaDTO);
+
+        // Validar que el cliente exista si se envió un ID
+        Cliente cliente = validarCliente(ventaDTO);
+
+        // Crear la venta con los datos validados
+        Venta nuevaVenta = getVenta(productos, cliente);
+
+        // Guardar la venta en la BD
+        Venta ventaGuardada = ventaRepo.save(nuevaVenta);
+
+        // Descontar stock y actualizar productos en la BD
+        descontarProductos(productos);
+
+        return ventaGuardada; // Se devuelve la venta creada
+    }
+
+
     public List<Venta> getVentas() {
         return ventaRepo.findAll();
     }
 
-    @Override
-    public void createVenta(Venta vent) {
-        Venta ventaGuardada = ventaRepo.save(vent);
-        for (Producto p : ventaGuardada.getListaProductos()) {
-            p.descontarCantidad();
-        }
-        productoRepo.saveAll(ventaGuardada.getListaProductos());
 
+    public Venta findVenta(Long id) {
+        return ventaRepo.findById(id).orElse(null);
     }
 
-    @Override
-    public Venta findVenta(Long codigoVenta) {
-        return ventaRepo.findById(codigoVenta).orElse(null);
-    }
+    public void deleteVenta(Long id) {
+        Venta venta = ventaRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Venta no encontrada con ID: " + id));
 
-    @Override
-    public void deleteVenta(Long codigoVenta) {
-        ventaRepo.deleteById(codigoVenta);
-
-    }
-
-    @Override
-    public void editVenta(Long codigoVentaOriginal, Long codigoVentaNuevo, LocalDate fechaVenta, double total, List<Producto> productos, Cliente cliente) {
-        Venta venta = this.findVenta(codigoVentaOriginal);
-        if (venta != null) {
-            venta.setCodigoVenta(codigoVentaNuevo);
-            venta.setFechaVenta(fechaVenta);
-            venta.setTotal(total);
-            venta.setListaProductos(productos);
-            venta.setUnCliente(cliente);
-            this.createVenta(venta);
+        for (Producto p : venta.getProductos()) {
+            p.aumentarCantidad();
         }
 
+        // Guardar los productos actualizados en la base de datos
+        productoRepo.saveAll(venta.getProductos());
+
+        // Eliminar la venta de la base de datos
+        ventaRepo.delete(venta);
     }
 
-    @Override
-    public List<Producto> productosDeUnaVenta(Long codigoVenta) {
-        Venta venta = this.findVenta(codigoVenta);
-        List<Producto> listaSegunVenta = null;
-        if (venta != null) {
-            listaSegunVenta = venta.getListaProductos();
-        }
-        return listaSegunVenta;
+
+    public List<Producto> productosDeUnaVenta(Long id) {
+        Venta venta = ventaRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Venta no encontrada"));
+        return venta.getProductos();
+    }
+
+
+    public List<Venta> ventasPorDia(LocalDate fecha) {
+        List<Venta> ventas = ventaRepo.findByFechaVenta(fecha)
+                .orElseThrow(()-> new IllegalArgumentException("No hay ventas para esa fecha"));
+        return ventas;
 
     }
 
-    @Override
-    public String getMontoYTotalVentasPorDia(LocalDate fecha) {
-        List<Venta> ventas = ventaRepo.findByFechaVenta(fecha);
-        double totalVentas = ventas.stream()
-                .mapToDouble(Venta::getTotal)
-                .sum();
-        return "El monto total de ventas es " + Double.toString(totalVentas) + " y la cantidad de ventas es " + ventas.size();
-
+    private ProductoVentaDTO convertirAVentaDTO(Venta venta) {
+        return new ProductoVentaDTO(venta.getId(), venta.getTotal(), venta.getProductos().size(), venta.getCliente().getNombre(), venta.getCliente().getApellido());
     }
 
-    @Override
+
     public ProductoVentaDTO obtenerVentaMayor() {
-        ProductoVentaDTO pvd = new ProductoVentaDTO();
         List<Venta> listaVentas = this.getVentas();
-        return listaVentas.stream()
+        Venta ventaMayor = listaVentas.stream()
                 .max(Comparator.comparingDouble(Venta::obtenerMonto))
-                .map(ProductoVentaDTO::buildProductoVentaDto)
-                .orElse(null);
+                .orElseThrow(() -> new IllegalArgumentException("No hay ventas registradas"));
+        return convertirAVentaDTO(ventaMayor);
+
 
     }
+
+
 
 
 }
