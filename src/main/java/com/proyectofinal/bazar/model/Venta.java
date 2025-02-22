@@ -29,6 +29,7 @@ public class Venta {
         for (Producto p : productos) {
             totalMonto += p.getCosto();
         }
+        this.total = totalMonto;
         return totalMonto;
     }
 }
