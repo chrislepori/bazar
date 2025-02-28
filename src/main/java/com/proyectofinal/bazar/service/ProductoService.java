@@ -1,6 +1,8 @@
 package com.proyectofinal.bazar.service;
 
 import com.proyectofinal.bazar.dto.ProductoDTO;
+import com.proyectofinal.bazar.exception.ApiException;
+import com.proyectofinal.bazar.exception.MensajeError;
 import com.proyectofinal.bazar.model.Producto;
 import com.proyectofinal.bazar.repository.ProductoRepository;
 import lombok.AllArgsConstructor;
@@ -24,7 +26,7 @@ public class ProductoService {
 
     public Producto createProducto(ProductoDTO productoDTO) {
         if (productoRepo.existsByNombre(productoDTO.getNombre())) {
-            throw new IllegalArgumentException("El producto ya existe");
+            throw new ApiException(MensajeError.PRODUCTO_NOT_FOUD);
         }
 
         Producto nuevoProducto = new Producto();
@@ -38,7 +40,7 @@ public class ProductoService {
 
     public Producto findProducto(Long id) {
         return productoRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado"));
+                .orElseThrow(() -> new ApiException(MensajeError.PRODUCT_EXISTING));
     }
 
 

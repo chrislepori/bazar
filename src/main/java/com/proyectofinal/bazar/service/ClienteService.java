@@ -1,6 +1,8 @@
 package com.proyectofinal.bazar.service;
 
 import com.proyectofinal.bazar.dto.ClienteDTO;
+import com.proyectofinal.bazar.exception.ApiException;
+import com.proyectofinal.bazar.exception.MensajeError;
 import com.proyectofinal.bazar.model.Cliente;
 import com.proyectofinal.bazar.repository.ClienteRepository;
 import lombok.AllArgsConstructor;
@@ -22,7 +24,7 @@ public class ClienteService {
 
     public Cliente createCliente(ClienteDTO clienteDTO) {
         if (clienteRepo.findByDni(clienteDTO.getDni()).isPresent()) {
-            throw new IllegalArgumentException("Ya existe un cliente con ese DNI.");
+            throw new ApiException(MensajeError.CLIENTE_EXISTING);
         }
         Cliente cliente = new Cliente();
         cliente.setDni(clienteDTO.getDni());
@@ -36,13 +38,13 @@ public class ClienteService {
 
     public Cliente findCliente(String dni) {
         return clienteRepo.findByDni(dni)
-                .orElseThrow(()-> new IllegalArgumentException("No se encontro el cliente"));
+                .orElseThrow(()-> new ApiException(MensajeError.CLIENTE_NOT_FOUND));
     }
 
 
     public void deleteCliente(String dni) {
         Cliente cliente = clienteRepo.findByDni(dni)
-                .orElseThrow(()-> new IllegalArgumentException("No se encontro el cliente"));
+                .orElseThrow(()-> new ApiException(MensajeError.CLIENTE_NOT_FOUND));
         clienteRepo.delete(cliente);
 
     }

@@ -2,6 +2,8 @@ package com.proyectofinal.bazar.service;
 
 import com.proyectofinal.bazar.dto.ProductoVentaDTO;
 import com.proyectofinal.bazar.dto.VentaDTO;
+import com.proyectofinal.bazar.exception.ApiException;
+import com.proyectofinal.bazar.exception.MensajeError;
 import com.proyectofinal.bazar.model.Cliente;
 import com.proyectofinal.bazar.model.Producto;
 import com.proyectofinal.bazar.model.Venta;
@@ -32,10 +34,10 @@ public class VentaService {
         List<Producto> productos = new ArrayList<>();
         for (Long id : ventaDTO.getProductosIds()) {
             Producto producto = productoRepo.findById(id)
-                    .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado con ID: " + id));
+                    .orElseThrow(() -> new ApiException(MensajeError.PRODUCTO_NOT_FOUD));
 
             if (!producto.tieneStock()) {
-                throw new IllegalArgumentException("El producto " + producto.getNombre() + " no tiene stock suficiente.");
+                throw new ApiException(MensajeError.PRODUCT_NO_STOCK);
             }
 
             productos.add(producto);
@@ -47,7 +49,7 @@ public class VentaService {
         Cliente cliente = null;
         if (ventaDTO.getClienteId() != null) {
             cliente = clienteRepo.findById(ventaDTO.getClienteId())
-                    .orElseThrow(() -> new IllegalArgumentException("Cliente no encontrado."));
+                    .orElseThrow(() -> new ApiException(MensajeError.CLIENTE_NOT_FOUND));
         }
         return cliente;
     }
@@ -72,7 +74,7 @@ public class VentaService {
     public Venta createVenta(VentaDTO ventaDTO) {
         // Validar que haya productos en la venta
         if (noHayProductos(ventaDTO)) {
-            throw new IllegalArgumentException("La venta debe tener al menos un producto.");
+            throw new ApiException(MensajeError.VENTA_SIN_PRODUCTO);
         }
 
         // Buscar los productos en la BD y validar stock
@@ -105,7 +107,7 @@ public class VentaService {
 
     public void deleteVenta(Long id) {
         Venta venta = ventaRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Venta no encontrada con ID: " + id));
+                .orElseThrow(() -> new ApiException(MensajeError.VENTA_NOT_FOUND));
 
         for (Producto p : venta.getProductos()) {
             p.aumentarCantidad();
@@ -121,14 +123,14 @@ public class VentaService {
 
     public List<Producto> productosDeUnaVenta(Long id) {
         Venta venta = ventaRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Venta no encontrada"));
+                .orElseThrow(() -> new ApiException(MensajeError.VENTA_NOT_FOUND));
         return venta.getProductos();
     }
 
 
     public List<Venta> ventasPorDia(LocalDate fecha) {
         List<Venta> ventas = ventaRepo.findByFechaVenta(fecha)
-                .orElseThrow(()-> new IllegalArgumentException("No hay ventas para esa fecha"));
+                .orElseThrow(()-> new ApiException(MensajeError.VENTA_NOT_FOUND_FECHA));
         return ventas;
 
     }
@@ -142,7 +144,7 @@ public class VentaService {
         List<Venta> listaVentas = this.getVentas();
         Venta ventaMayor = listaVentas.stream()
                 .max(Comparator.comparingDouble(Venta::obtenerMonto))
-                .orElseThrow(() -> new IllegalArgumentException("No hay ventas registradas"));
+                .orElseThrow(() -> new ApiException(MensajeError.VENTA_NOT_FOUND));
         return convertirAVentaDTO(ventaMayor);
 
 
