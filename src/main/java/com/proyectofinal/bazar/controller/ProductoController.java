@@ -1,11 +1,13 @@
 package com.proyectofinal.bazar.controller;
 
 import com.proyectofinal.bazar.dto.ProductoDTO;
+import com.proyectofinal.bazar.dto.ProductoPaginationDTO;
 import com.proyectofinal.bazar.dto.ProductoResponseDTO;
 import com.proyectofinal.bazar.model.Producto;
 import com.proyectofinal.bazar.service.ProductoService;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,21 +24,12 @@ public class ProductoController {
 
     private final ProductoService productoService;
 
+
     @PostMapping
     public ResponseEntity<ProductoResponseDTO> createProducto(@RequestBody ProductoDTO productoDTO) {
-        Producto nuevoProducto = productoService.createProducto(productoDTO);
+        ProductoResponseDTO nuevoProducto = productoService.createProducto(productoDTO);
 
-        // Convertimos el Producto en un ProductoResponseDTO antes de devolverlo
-        ProductoResponseDTO responseDTO = new ProductoResponseDTO(
-                nuevoProducto.getId(),
-                nuevoProducto.getNombre(),
-                nuevoProducto.getCosto(),
-                nuevoProducto.getCantidadDisponible(),
-                nuevoProducto.getMarca()
-
-        );
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoProducto);
     }
 
     @DeleteMapping("/{id}")
@@ -83,10 +76,18 @@ public class ProductoController {
             ProductoResponseDTO productoResponseDTO = new ProductoResponseDTO(p.getId(), p.getNombre(), p.getCosto(), p.getCantidadDisponible(), p.getMarca());
             responseDTOs.add(productoResponseDTO);
         }
-        return products.isEmpty() ? ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList()) : ResponseEntity.ok().body(responseDTOs);
+        return ResponseEntity.ok().body(responseDTOs);
 
 
     }
+
+    @GetMapping("/all-productsPagination")
+    public ResponseEntity<Page<Producto>> getProductosPagination( ProductoPaginationDTO productoPaginationDTO){
+        Page<Producto> pageProducts = productoService.getProductsPagination(productoPaginationDTO.getNumeroPagina(), productoPaginationDTO.getCantidadElementos());
+        return ResponseEntity.ok().body(pageProducts);
+    }
+
+
 
 
 

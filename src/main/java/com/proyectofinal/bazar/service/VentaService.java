@@ -126,9 +126,8 @@ public class VentaService {
 
 
     public List<Venta> ventasPorDia(LocalDate fecha) {
-        List<Venta> ventas = ventaRepo.findByFechaVenta(fecha)
-                .orElseThrow(() -> new ApiException(MensajeError.VENTA_NOT_FOUND_FECHA));
-        return ventas;
+        return ventaRepo.findByFechaVenta(fecha);
+
 
     }
 

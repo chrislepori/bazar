@@ -11,6 +11,6 @@ import java.util.Optional;
 @Repository
 public interface VentaRepository extends JpaRepository<Venta, Long> {
 
-     Optional<List<Venta>> findByFechaVenta(LocalDate fecha);
+     List<Venta> findByFechaVenta(LocalDate fecha);
 
 }
