@@ -75,6 +75,20 @@ public class ProductoController {
 
     }
 
+    @GetMapping("/all-products")
+    public ResponseEntity<List<ProductoResponseDTO>> getProducts(){
+        List<Producto> products = productoService.getProductos();
+        List<ProductoResponseDTO> responseDTOs = new ArrayList<>();
+        for(Producto p: products){
+            ProductoResponseDTO productoResponseDTO = new ProductoResponseDTO(p.getId(), p.getNombre(), p.getCosto(), p.getCantidadDisponible(), p.getMarca());
+            responseDTOs.add(productoResponseDTO);
+        }
+        return products.isEmpty() ? ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList()) : ResponseEntity.ok().body(responseDTOs);
+
+
+    }
+
+
 
 }
 

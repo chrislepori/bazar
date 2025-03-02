@@ -26,51 +26,6 @@ public class VentaService {
     private final ProductoRepository productoRepo;
     private final ClienteRepository clienteRepo;
 
-    private boolean noHayProductos(VentaDTO ventaDTO) {
-        return ventaDTO.getProductosIds() == null || ventaDTO.getProductosIds().isEmpty();
-    }
-
-    private List<Producto> obtenerProductosValidos(VentaDTO ventaDTO) {
-        List<Producto> productos = new ArrayList<>();
-        for (Long id : ventaDTO.getProductosIds()) {
-            Producto producto = productoRepo.findById(id)
-                    .orElseThrow(() -> new ApiException(MensajeError.PRODUCTO_NOT_FOUD));
-
-            if (!producto.tieneStock()) {
-                throw new ApiException(MensajeError.PRODUCT_NO_STOCK);
-            }
-
-            productos.add(producto);
-        }
-        return productos;
-    }
-
-    private Cliente validarCliente(VentaDTO ventaDTO) {
-        Cliente cliente = null;
-        if (ventaDTO.getClienteId() != null) {
-            cliente = clienteRepo.findById(ventaDTO.getClienteId())
-                    .orElseThrow(() -> new ApiException(MensajeError.CLIENTE_NOT_FOUND));
-        }
-        return cliente;
-    }
-
-    private Venta getVenta(List<Producto> productos, Cliente cliente) {
-        Venta nuevaVenta = new Venta();
-        nuevaVenta.setFechaVenta(LocalDate.now()); // Fecha actual
-        nuevaVenta.setProductos(productos);
-        nuevaVenta.setCliente(cliente);
-        nuevaVenta.obtenerMonto();
-        return nuevaVenta;
-    }
-
-    private void descontarProductos(List<Producto> productos) {
-        for (Producto p : productos) {
-            p.descontarCantidad();
-        }
-        productoRepo.saveAll(productos);
-    }
-
-
     public Venta createVenta(VentaDTO ventaDTO) {
         // Validar que haya productos en la venta
         if (noHayProductos(ventaDTO)) {
@@ -92,9 +47,51 @@ public class VentaService {
         // Descontar stock y actualizar productos en la BD
         descontarProductos(productos);
 
-        return ventaGuardada; // Se devuelve la venta creada
+        return ventaGuardada;
     }
 
+
+    private boolean noHayProductos(VentaDTO ventaDTO) {
+        return ventaDTO.getProductosIds() == null || ventaDTO.getProductosIds().isEmpty();
+    }
+
+    private List<Producto> obtenerProductosValidos(VentaDTO ventaDTO) {
+        List<Producto> productos = new ArrayList<>();
+        for (Long id : ventaDTO.getProductosIds()) {
+            Producto producto = productoRepo.findById(id)
+                    .orElseThrow(() -> new ApiException(MensajeError.PRODUCTO_NOT_FOUD));
+
+            if (!producto.tieneStock()) {
+                throw new ApiException(MensajeError.PRODUCT_NO_STOCK);
+            }
+
+            productos.add(producto);
+        }
+        return productos;
+    }
+
+    private Cliente validarCliente(VentaDTO ventaDTO) {
+        Cliente cliente = clienteRepo.findById(ventaDTO.getClienteId())
+                .orElseThrow(() -> new ApiException(MensajeError.CLIENTE_NOT_FOUND));
+
+        return cliente;
+    }
+
+    private Venta getVenta(List<Producto> productos, Cliente cliente) {
+        Venta nuevaVenta = new Venta();
+        nuevaVenta.setFechaVenta(LocalDate.now());
+        nuevaVenta.setProductos(productos);
+        nuevaVenta.setCliente(cliente);
+        nuevaVenta.obtenerMonto();
+        return nuevaVenta;
+    }
+
+    private void descontarProductos(List<Producto> productos) {
+        for (Producto p : productos) {
+            p.descontarCantidad();
+        }
+        productoRepo.saveAll(productos);
+    }
 
     public List<Venta> getVentas() {
         return ventaRepo.findAll();
@@ -130,7 +127,7 @@ public class VentaService {
 
     public List<Venta> ventasPorDia(LocalDate fecha) {
         List<Venta> ventas = ventaRepo.findByFechaVenta(fecha)
-                .orElseThrow(()-> new ApiException(MensajeError.VENTA_NOT_FOUND_FECHA));
+                .orElseThrow(() -> new ApiException(MensajeError.VENTA_NOT_FOUND_FECHA));
         return ventas;
 
     }
@@ -149,8 +146,6 @@ public class VentaService {
 
 
     }
-
-
 
 
 }
