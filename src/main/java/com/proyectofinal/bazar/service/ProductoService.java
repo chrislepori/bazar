@@ -12,11 +12,16 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -26,11 +31,14 @@ public class ProductoService {
     private final ModelMapper modelMapper;
 
 
-    public List<Producto> getProductos() {
-        return productoRepo.findAll();
+    public List<ProductoResponseDTO> getProductos() {
+        List<Producto> productos = productoRepo.findAll();
+        return productos.stream()
+                .map(producto -> modelMapper.map(producto, ProductoResponseDTO.class))
+                .collect(Collectors.toList());
     }
 
-    public Page<Producto> getProductsPagination(int numeroPagina, int cantidad){
+    public Page<Producto> getProductsPagination(int numeroPagina, int cantidad) {
         Pageable pageable = PageRequest.of(numeroPagina, cantidad);
         return productoRepo.findAll(pageable);
 
@@ -39,33 +47,37 @@ public class ProductoService {
 
     public ProductoResponseDTO createProducto(ProductoDTO productoDTO) {
         if (productoRepo.existsByNombre(productoDTO.getNombre())) {
-            throw new ApiException(MensajeError.PRODUCTO_NOT_FOUD);
+            throw new ApiException(MensajeError.PRODUCT_EXISTING);
         }
 
-
-        //usando modelMapper
+        //mapea de ProductoDTO a Producto
         Producto producto = modelMapper.map(productoDTO, Producto.class);
-
+        //lo guarda en la bd
         productoRepo.save(producto);
+        //mapea de Producto a ProductoResponseDTO
         return modelMapper.map(producto, ProductoResponseDTO.class);
     }
 
-    public Producto findProducto(Long id) {
-        return productoRepo.findById(id)
-                .orElseThrow(() -> new ApiException(MensajeError.PRODUCT_EXISTING));
+    public ProductoResponseDTO findProducto(Long id) {
+        Producto producto = productoRepo.findById(id)
+                .orElseThrow(() -> new ApiException(MensajeError.PRODUCTO_NOT_FOUD));
+        return modelMapper.map(producto, ProductoResponseDTO.class);
     }
 
 
     public void deleteProducto(Long id) {
-        Producto producto = findProducto(id);
-        if(producto != null){
-            productoRepo.delete(producto);
-        }
+        Producto producto = productoRepo.findById(id)
+                .orElseThrow(() -> new ApiException(MensajeError.PRODUCTO_NOT_FOUD));
+        productoRepo.delete(producto);
 
     }
 
-    public List<Producto> productosConBajoStock() {
-        return productoRepo.findByCantidadDisponibleLessThanEqual(1000);
+    public List<ProductoResponseDTO> productosConBajoStock() {
+        List<Producto> productosBajoStock = productoRepo.findByCantidadDisponibleLessThanEqual(1000);
+        return productosBajoStock.stream()
+                .map(producto -> modelMapper.map(producto, ProductoResponseDTO.class))
+                .collect(Collectors.toList());
+
     }
 
 

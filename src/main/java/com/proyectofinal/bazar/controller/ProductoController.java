@@ -27,9 +27,7 @@ public class ProductoController {
 
     @PostMapping
     public ResponseEntity<ProductoResponseDTO> createProducto(@RequestBody ProductoDTO productoDTO) {
-        ProductoResponseDTO nuevoProducto = productoService.createProducto(productoDTO);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoProducto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(productoService.createProducto(productoDTO));
     }
 
     @DeleteMapping("/{id}")
@@ -41,54 +39,24 @@ public class ProductoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductoResponseDTO> encontrarProducto(@PathVariable Long id) {
-        Producto productoEncontrado = productoService.findProducto(id);
-
-        ProductoResponseDTO responseDTO = new ProductoResponseDTO(
-                productoEncontrado.getId(),
-                productoEncontrado.getNombre(),
-                productoEncontrado.getCosto(),
-                productoEncontrado.getCantidadDisponible(),
-                productoEncontrado.getMarca()
-        );
-
-        return ResponseEntity.ok(responseDTO);
+        return ResponseEntity.ok(productoService.findProducto(id));
     }
 
     @GetMapping("/bajo-stock")
-    public ResponseEntity<List<ProductoResponseDTO>> productosConBajoStock(){
-        List<Producto> productosBajoStock = productoService.productosConBajoStock();
-        List<ProductoResponseDTO> responseDTOs = new ArrayList<>();
-        for(Producto p: productosBajoStock){
-            ProductoResponseDTO productoResponseDTO = new ProductoResponseDTO(p.getId(), p.getNombre(), p.getCosto(), p.getCantidadDisponible(), p.getMarca());
-            responseDTOs.add(productoResponseDTO);
-        }
-        return productosBajoStock.isEmpty()
-                ? ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList())
-                : ResponseEntity.ok(responseDTOs);
-
+    public ResponseEntity<List<ProductoResponseDTO>> productosConBajoStock() {
+        return ResponseEntity.ok().body(productoService.productosConBajoStock());
     }
 
     @GetMapping("/all-products")
-    public ResponseEntity<List<ProductoResponseDTO>> getProducts(){
-        List<Producto> products = productoService.getProductos();
-        List<ProductoResponseDTO> responseDTOs = new ArrayList<>();
-        for(Producto p: products){
-            ProductoResponseDTO productoResponseDTO = new ProductoResponseDTO(p.getId(), p.getNombre(), p.getCosto(), p.getCantidadDisponible(), p.getMarca());
-            responseDTOs.add(productoResponseDTO);
-        }
-        return ResponseEntity.ok().body(responseDTOs);
-
-
+    public ResponseEntity<List<ProductoResponseDTO>> getProducts() {
+        return ResponseEntity.ok().body(productoService.getProductos());
     }
 
     @GetMapping("/all-productsPagination")
-    public ResponseEntity<Page<Producto>> getProductosPagination( ProductoPaginationDTO productoPaginationDTO){
+    public ResponseEntity<Page<Producto>> getProductosPagination(ProductoPaginationDTO productoPaginationDTO) {
         Page<Producto> pageProducts = productoService.getProductsPagination(productoPaginationDTO.getNumeroPagina(), productoPaginationDTO.getCantidadElementos());
         return ResponseEntity.ok().body(pageProducts);
     }
-
-
-
 
 
 }
