@@ -50,11 +50,10 @@ public class ProductoService {
             throw new ApiException(MensajeError.PRODUCT_EXISTING);
         }
 
-        //mapea de ProductoDTO a Producto
         Producto producto = modelMapper.map(productoDTO, Producto.class);
-        //lo guarda en la bd
+
         productoRepo.save(producto);
-        //mapea de Producto a ProductoResponseDTO
+
         return modelMapper.map(producto, ProductoResponseDTO.class);
     }
 

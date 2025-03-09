@@ -1,10 +1,13 @@
 package com.proyectofinal.bazar.controller;
 
+import com.proyectofinal.bazar.dto.ProductoResponseDTO;
 import com.proyectofinal.bazar.dto.VentaDTO;
+import com.proyectofinal.bazar.dto.VentaPaginationDTO;
 import com.proyectofinal.bazar.dto.VentaResponseDTO;
 import com.proyectofinal.bazar.model.Venta;
 import com.proyectofinal.bazar.service.VentaService;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,32 +28,41 @@ public class VentaController {
 
     @PostMapping
     public ResponseEntity<VentaResponseDTO> crearVenta(@RequestBody VentaDTO ventaDTO) {
-        Venta venta = ventaService.createVenta(ventaDTO);
-        VentaResponseDTO ventaResponseDTO = new VentaResponseDTO(venta.getId(), venta.getFechaVenta(), venta.getTotal(), venta.getCliente());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ventaResponseDTO);
-
+        return ResponseEntity.status(HttpStatus.CREATED).body(ventaService.createVenta(ventaDTO));
     }
 
     @GetMapping
     public ResponseEntity<List<VentaResponseDTO>> ventasPorDia(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        List<Venta> ventas = ventaService.ventasPorDia(fecha);
-        List<VentaResponseDTO> responseDTOS = new ArrayList<>();
-        for (Venta venta : ventas) {
-            VentaResponseDTO ventaResponseDTO = new VentaResponseDTO(venta.getId(), venta.getFechaVenta(), venta.getTotal(), venta.getCliente());
-            responseDTOS.add(ventaResponseDTO);
-        }
-        return ventas.isEmpty()
-                ? ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList())
-                : ResponseEntity.ok(responseDTOS);
+        return ResponseEntity.status(HttpStatus.OK).body(ventaService.ventasPorDia(fecha));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteVenta(@PathVariable Long id) {
         ventaService.deleteVenta(id);
         return ResponseEntity.noContent().build();
-
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<VentaResponseDTO> encontrarVenta(@PathVariable Long id){
+        return ResponseEntity.status(HttpStatus.OK).body(ventaService.findVenta(id));
+    }
+
+    @GetMapping("/{id}/productos")
+    public ResponseEntity<List<ProductoResponseDTO>> productosDeUnaVenta(@PathVariable Long id){
+        return ResponseEntity.status(HttpStatus.OK).body(ventaService.productosDeUnaVenta(id));
+    }
+
+    @GetMapping("/ventasPagination")
+    public ResponseEntity<Page<Venta>> getVentasPagination(VentaPaginationDTO ventaPaginationDTO){
+        return ResponseEntity.ok().body(ventaService.getVentasPagination(ventaPaginationDTO.getNumeroPagina(), ventaPaginationDTO.getCantidadElementos()));
+    }
+
+    @GetMapping("/ventaMayor")
+    public ResponseEntity<VentaResponseDTO> mayorVenta(){
+        return ResponseEntity.status(HttpStatus.OK).body(ventaService.obtenerVentaMayor());
+    }
+
 
 
 

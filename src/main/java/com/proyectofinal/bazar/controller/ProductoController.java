@@ -47,12 +47,12 @@ public class ProductoController {
         return ResponseEntity.ok().body(productoService.productosConBajoStock());
     }
 
-    @GetMapping("/all-products")
+    @GetMapping("/products")
     public ResponseEntity<List<ProductoResponseDTO>> getProducts() {
         return ResponseEntity.ok().body(productoService.getProductos());
     }
 
-    @GetMapping("/all-productsPagination")
+    @GetMapping("/productsPagination")
     public ResponseEntity<Page<Producto>> getProductosPagination(ProductoPaginationDTO productoPaginationDTO) {
         Page<Producto> pageProducts = productoService.getProductsPagination(productoPaginationDTO.getNumeroPagina(), productoPaginationDTO.getCantidadElementos());
         return ResponseEntity.ok().body(pageProducts);

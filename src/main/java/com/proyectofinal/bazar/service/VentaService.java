@@ -1,7 +1,8 @@
 package com.proyectofinal.bazar.service;
 
-import com.proyectofinal.bazar.dto.ProductoVentaDTO;
+import com.proyectofinal.bazar.dto.ProductoResponseDTO;
 import com.proyectofinal.bazar.dto.VentaDTO;
+import com.proyectofinal.bazar.dto.VentaResponseDTO;
 import com.proyectofinal.bazar.exception.ApiException;
 import com.proyectofinal.bazar.exception.MensajeError;
 import com.proyectofinal.bazar.model.Cliente;
@@ -11,12 +12,17 @@ import com.proyectofinal.bazar.repository.ClienteRepository;
 import com.proyectofinal.bazar.repository.ProductoRepository;
 import com.proyectofinal.bazar.repository.VentaRepository;
 import lombok.AllArgsConstructor;
+import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -25,8 +31,9 @@ public class VentaService {
     private final VentaRepository ventaRepo;
     private final ProductoRepository productoRepo;
     private final ClienteRepository clienteRepo;
+    private final ModelMapper modelMapper;
 
-    public Venta createVenta(VentaDTO ventaDTO) {
+    public VentaResponseDTO createVenta(VentaDTO ventaDTO) {
         // Validar que haya productos en la venta
         if (noHayProductos(ventaDTO)) {
             throw new ApiException(MensajeError.VENTA_SIN_PRODUCTO);
@@ -47,7 +54,7 @@ public class VentaService {
         // Descontar stock y actualizar productos en la BD
         descontarProductos(productos);
 
-        return ventaGuardada;
+        return modelMapper.map(ventaGuardada, VentaResponseDTO.class);
     }
 
 
@@ -98,8 +105,10 @@ public class VentaService {
     }
 
 
-    public Venta findVenta(Long id) {
-        return ventaRepo.findById(id).orElse(null);
+    public VentaResponseDTO findVenta(Long id) {
+        Venta venta = ventaRepo.findById(id)
+                .orElseThrow(() -> new ApiException(MensajeError.VENTA_NOT_FOUND));
+        return modelMapper.map(venta, VentaResponseDTO.class);
     }
 
     public void deleteVenta(Long id) {
@@ -118,30 +127,36 @@ public class VentaService {
     }
 
 
-    public List<Producto> productosDeUnaVenta(Long id) {
+    public List<ProductoResponseDTO> productosDeUnaVenta(Long id) {
         Venta venta = ventaRepo.findById(id)
                 .orElseThrow(() -> new ApiException(MensajeError.VENTA_NOT_FOUND));
-        return venta.getProductos();
+        List<Producto> productos = venta.getProductos();
+        return productos.stream()
+                .map(producto -> modelMapper.map(producto, ProductoResponseDTO.class))
+                .collect(Collectors.toList());
     }
 
 
-    public List<Venta> ventasPorDia(LocalDate fecha) {
-        return ventaRepo.findByFechaVenta(fecha);
-
+    public List<VentaResponseDTO> ventasPorDia(LocalDate fecha) {
+        List<Venta> ventasPorDia =  ventaRepo.findByFechaVenta(fecha);
+        return ventasPorDia.stream()
+                .map(venta -> modelMapper.map(venta, VentaResponseDTO.class))
+                .collect(Collectors.toList());
 
     }
 
-    private ProductoVentaDTO convertirAVentaDTO(Venta venta) {
-        return new ProductoVentaDTO(venta.getId(), venta.getTotal(), venta.getProductos().size(), venta.getCliente().getNombre(), venta.getCliente().getApellido());
+    public Page<Venta> getVentasPagination(int numeroPagina, int cantidad ){
+        Pageable pageable = PageRequest.of(numeroPagina, cantidad);
+        return ventaRepo.findAll(pageable);
     }
 
 
-    public ProductoVentaDTO obtenerVentaMayor() {
+    public VentaResponseDTO obtenerVentaMayor() {
         List<Venta> listaVentas = this.getVentas();
         Venta ventaMayor = listaVentas.stream()
                 .max(Comparator.comparingDouble(Venta::obtenerMonto))
                 .orElseThrow(() -> new ApiException(MensajeError.VENTA_NOT_FOUND));
-        return convertirAVentaDTO(ventaMayor);
+        return modelMapper.map(ventaMayor, VentaResponseDTO.class);
 
 
     }
