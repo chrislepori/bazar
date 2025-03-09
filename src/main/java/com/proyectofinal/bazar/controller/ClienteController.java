@@ -5,8 +5,10 @@ import com.proyectofinal.bazar.dto.ClientePaginationDTO;
 import com.proyectofinal.bazar.dto.ClienteResponseDTO;
 import com.proyectofinal.bazar.model.Cliente;
 import com.proyectofinal.bazar.service.ClienteService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +26,7 @@ public class ClienteController {
     private final ClienteService clienteService;
 
     @PostMapping
-    public ResponseEntity<ClienteResponseDTO> crearCliente(@RequestBody ClienteDTO clienteDTO) {
+    public ResponseEntity<ClienteResponseDTO> crearCliente(@RequestBody @Valid ClienteDTO clienteDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(clienteService.createCliente(clienteDTO));
     }
 

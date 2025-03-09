@@ -32,10 +32,9 @@ public class ProductoService {
 
 
     public List<ProductoResponseDTO> getProductos() {
-        List<Producto> productos = productoRepo.findAll();
-        return productos.stream()
+        return productoRepo.findAll().stream()
                 .map(producto -> modelMapper.map(producto, ProductoResponseDTO.class))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public Page<Producto> getProductsPagination(int numeroPagina, int cantidad) {
@@ -72,10 +71,9 @@ public class ProductoService {
     }
 
     public List<ProductoResponseDTO> productosConBajoStock() {
-        List<Producto> productosBajoStock = productoRepo.findByCantidadDisponibleLessThanEqual(1000);
-        return productosBajoStock.stream()
+        return productoRepo.findByCantidadDisponibleLessThanEqual(1000).stream()
                 .map(producto -> modelMapper.map(producto, ProductoResponseDTO.class))
-                .collect(Collectors.toList());
+                .toList();
 
     }
 

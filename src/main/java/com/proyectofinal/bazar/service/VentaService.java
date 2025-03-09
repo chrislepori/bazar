@@ -34,33 +34,20 @@ public class VentaService {
     private final ModelMapper modelMapper;
 
     public VentaResponseDTO createVenta(VentaDTO ventaDTO) {
-        // Validar que haya productos en la venta
-        if (noHayProductos(ventaDTO)) {
-            throw new ApiException(MensajeError.VENTA_SIN_PRODUCTO);
-        }
 
-        // Buscar los productos en la BD y validar stock
         List<Producto> productos = obtenerProductosValidos(ventaDTO);
 
-        // Validar que el cliente exista si se envió un ID
         Cliente cliente = validarCliente(ventaDTO);
 
-        // Crear la venta con los datos validados
         Venta nuevaVenta = getVenta(productos, cliente);
 
-        // Guardar la venta en la BD
         Venta ventaGuardada = ventaRepo.save(nuevaVenta);
 
-        // Descontar stock y actualizar productos en la BD
         descontarProductos(productos);
 
         return modelMapper.map(ventaGuardada, VentaResponseDTO.class);
     }
 
-
-    private boolean noHayProductos(VentaDTO ventaDTO) {
-        return ventaDTO.getProductosIds() == null || ventaDTO.getProductosIds().isEmpty();
-    }
 
     private List<Producto> obtenerProductosValidos(VentaDTO ventaDTO) {
         List<Producto> productos = new ArrayList<>();
@@ -119,10 +106,10 @@ public class VentaService {
             p.aumentarCantidad();
         }
 
-        // Guardar los productos actualizados en la base de datos
+
         productoRepo.saveAll(venta.getProductos());
 
-        // Eliminar la venta de la base de datos
+
         ventaRepo.delete(venta);
     }
 
@@ -130,10 +117,10 @@ public class VentaService {
     public List<ProductoResponseDTO> productosDeUnaVenta(Long id) {
         Venta venta = ventaRepo.findById(id)
                 .orElseThrow(() -> new ApiException(MensajeError.VENTA_NOT_FOUND));
-        List<Producto> productos = venta.getProductos();
-        return productos.stream()
+
+        return venta.getProductos().stream()
                 .map(producto -> modelMapper.map(producto, ProductoResponseDTO.class))
-                .collect(Collectors.toList());
+                .toList();
     }
 
 
@@ -141,7 +128,7 @@ public class VentaService {
         List<Venta> ventasPorDia =  ventaRepo.findByFechaVenta(fecha);
         return ventasPorDia.stream()
                 .map(venta -> modelMapper.map(venta, VentaResponseDTO.class))
-                .collect(Collectors.toList());
+                .toList();
 
     }
 

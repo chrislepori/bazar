@@ -6,6 +6,7 @@ import com.proyectofinal.bazar.dto.VentaPaginationDTO;
 import com.proyectofinal.bazar.dto.VentaResponseDTO;
 import com.proyectofinal.bazar.model.Venta;
 import com.proyectofinal.bazar.service.VentaService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -27,30 +28,25 @@ public class VentaController {
     private final VentaService ventaService;
 
     @PostMapping
-    public ResponseEntity<VentaResponseDTO> crearVenta(@RequestBody VentaDTO ventaDTO) {
+    public ResponseEntity<VentaResponseDTO> crearVenta(@RequestBody @Valid VentaDTO ventaDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ventaService.createVenta(ventaDTO));
     }
 
     @GetMapping
     public ResponseEntity<List<VentaResponseDTO>> ventasPorDia(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
-        return ResponseEntity.status(HttpStatus.OK).body(ventaService.ventasPorDia(fecha));
+        return ResponseEntity.ok().body(ventaService.ventasPorDia(fecha));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteVenta(@PathVariable Long id) {
-        ventaService.deleteVenta(id);
-        return ResponseEntity.noContent().build();
-    }
 
     @GetMapping("/{id}")
     public ResponseEntity<VentaResponseDTO> encontrarVenta(@PathVariable Long id){
-        return ResponseEntity.status(HttpStatus.OK).body(ventaService.findVenta(id));
+        return ResponseEntity.ok().body(ventaService.findVenta(id));
     }
 
     @GetMapping("/{id}/productos")
     public ResponseEntity<List<ProductoResponseDTO>> productosDeUnaVenta(@PathVariable Long id){
-        return ResponseEntity.status(HttpStatus.OK).body(ventaService.productosDeUnaVenta(id));
+        return ResponseEntity.ok().body(ventaService.productosDeUnaVenta(id));
     }
 
     @GetMapping("/ventasPagination")
@@ -60,7 +56,13 @@ public class VentaController {
 
     @GetMapping("/ventaMayor")
     public ResponseEntity<VentaResponseDTO> mayorVenta(){
-        return ResponseEntity.status(HttpStatus.OK).body(ventaService.obtenerVentaMayor());
+        return ResponseEntity.ok().body(ventaService.obtenerVentaMayor());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteVenta(@PathVariable Long id) {
+        ventaService.deleteVenta(id);
+        return ResponseEntity.noContent().build();
     }
 
 
