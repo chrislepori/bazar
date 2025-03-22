@@ -1,4 +1,4 @@
-package com.proyectofinal.bazar.exception;
+package com.proyectofinal.bazar.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
